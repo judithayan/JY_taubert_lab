@@ -1,3 +1,5 @@
-# JY_Taubert Lab Code repository
+# JY's Code repository
 
 A place to store my stuff. 
+
+Taubert Lab @ CMMT
