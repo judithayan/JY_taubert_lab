@@ -1,3 +1,13 @@
+# GSEA tutorial
+
+Taubert lab's GSEA workflow.
+
+Required: DEG data in csv / xlsx format
+
+
+
+
+
 ## Preparing gmt files
 
 GMT are tab-delimited files, with group name In first/ second columns, and gene list in 3rd-nth column.
