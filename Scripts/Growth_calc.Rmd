@@ -1,0 +1,122 @@
+---
+title: "Growth_Calc"
+output: html_document
+---
+Growth calculator
+
+```{r}
+
+# translate to and from hours and days/hours
+to_days <- function(hrs){
+  dd <- hrs %/% 24
+  hh <- hrs %% 24
+  c(dd, hh)
+}
+
+to_hours <- function(ds){
+  if (length(ds)==2){
+    dd <- ds[[1]]
+    hh <- ds[[2]]
+    dd*24+hh
+  } else {
+    ds*24
+  }
+}
+
+# finds the interval according to a col and returns the corresponding row
+find_interval <- function(df,coln, num){
+  df[
+    df[[coln]] <= num & 
+       c(df[[coln]][-1], df[[coln]][length(df[[coln]])]) > num
+    , ]
+}
+
+# returns the next thing in the vector
+next_name <- function(string, vec){
+  vec[match(string, vec)+1]
+}
+
+
+# transforms breakpoint-based timeline to start-end format
+parse_timeline <- function(tl, coln){
+  start <- tl[[coln]]
+  end <- c(tl[[coln]][-1], tl[[coln]][length(tl[[coln]])])
+  data.frame(Event = tl$Event, start=start, end=end, Stage=tl$Stage)
+}
+# ptl <- parse_timeline(tl,"X16")
+
+
+# stage description to hours
+staging_key <- data.frame(modifier = c("start", "early", "mid", "late", "end"),
+           percentile = c(0, .25, .50, .75, 1))
+
+stage_to_hrs <- function(desc, ptl=ptl){
+  query = desc
+  query <- strsplit(query, "\\s+")[[1]]
+  percentile <- staging_key[staging_key$modifier==query[[1]], "percentile"]
+  interval <- ptl[ptl$Stage==query[[2]],]
+  (interval$end-interval$start)*percentile+interval$start
+}
+
+
+# stage_to_hrs("late L4", ptl)
+
+
+# hours to stage desc
+hrs_to_stage <- function(hrs, ptl=ptl){
+  ss <- ptl[hrs >= ptl$start & hrs < ptl$end, ]
+  stage <- ss$Stage
+  percentile <- (hrs-ss$start)/(ss$end-ss$start)
+  modifier <- find_interval(staging_key, "percentile", percentile)$modifier
+  next_modifier <- next_name("early", staging_key$modifier)
+  paste0(modifier, " to ", next_modifier, " ", stage, " (", round(percentile,3), "%)")
+}
+
+# hrs_to_stage(50, ptl)
+
+
+```
+
+
+Example of using this script
+```{r}
+library(xlsx)
+tl <- read.xlsx(paste0(getwd(),"//worm_growth.xlsx"),1)
+
+# set to 20 deg
+ptl <- parse_timeline(tl,"X20")
+ptl
+
+# e.g. we have a plate of L1s and we want to know when they get to mid L4
+stage_to_hrs("mid L4", ptl) - stage_to_hrs("early L1", ptl)
+
+
+
+# Example 2. we have a plate of mid L1s and we want to know what they will become in 2 days
+result <- stage_to_hrs("mid L1", ptl) + to_hours(c(2,0))
+hrs_to_stage(result, ptl)
+
+```
+
+
+
+```{r}
+library(candela)
+
+data <- list(
+    list(name='Do this', level=1, start=0, end=5),
+    list(name='This part 1', level=2, start=0, end=3),
+    list(name='This part 2', level=2, start=3, end=5),
+    list(name='Then that', level=1, start=5, end=15),
+    list(name='That part 1', level=2, start=5, end=10),
+    list(name='That part 2', level=2, start=10, end=15))
+
+candela('GanttChart',
+    data=data, label='name',
+    start='start', end='end', level='level',
+    width=700, height=200)
+
+
+
+```
+
